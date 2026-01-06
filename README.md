@@ -17,8 +17,6 @@
   只需输入 BTC 地址，即可在手机上掌控您的独挖算力。
 </p>
 
--
-
 <div align="center">
 
 **Star this project if it helps your solo mining journey! ⭐**
