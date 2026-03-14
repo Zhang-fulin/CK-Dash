@@ -35,6 +35,10 @@ export const I18N = {
     min1: '1 分钟',
     min5: '5 分钟',
     hr1: '1 小时',
+    balance: '链上余额',
+    balanceConfirmed: '已确认',
+    balanceUnconfirmed: '待确认',
+    balanceError: '余额获取失败',
   },
   en: {
     title: '⚡ CK-Dash',
@@ -70,6 +74,10 @@ export const I18N = {
     min1: '1 min',
     min5: '5 min',
     hr1: '1 hr',
+    balance: 'Balance',
+    balanceConfirmed: 'Confirmed',
+    balanceUnconfirmed: 'Unconfirmed',
+    balanceError: 'Balance fetch failed',
   },
 } as const;
 

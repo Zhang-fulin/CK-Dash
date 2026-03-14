@@ -31,5 +31,14 @@ export function useAddresses() {
     return next;
   };
 
-  return { addresses, load, addAddress, removeAddress };
+  const renameAddress = async (id: string, label: string) => {
+    const next = addresses.map(a => a.id === id ? { ...a, label } : a);
+    await save(next);
+  };
+
+  const reorderAddresses = async (next: AddressEntry[]) => {
+    await save(next);
+  };
+
+  return { addresses, load, addAddress, removeAddress, renameAddress, reorderAddresses };
 }

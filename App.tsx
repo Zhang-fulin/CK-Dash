@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAddresses } from './src/hooks/useAddresses';
 import { useMining } from './src/hooks/useMining';
+import { useBalance } from './src/hooks/useBalance';
 import { I18N } from './src/i18n';
 import { saveLang } from './src/storage';
 import { AddressEntry, Lang } from './src/types';
@@ -13,8 +14,9 @@ export default function App() {
   const [showModal, setShowModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AddressEntry | null>(null);
 
-  const { addresses, load, addAddress, removeAddress } = useAddresses();
+  const { addresses, load, addAddress, removeAddress, renameAddress } = useAddresses();
   const { dataMap, loadingMap, errorMap, fetchOne, fetchAll, clearEntry } = useMining();
+  const { balanceMap, balanceLoadingMap, balanceErrorMap, fetchBalance, fetchAllBalances, clearBalanceEntry } = useBalance();
   const t = I18N[lang];
 
   useEffect(() => {
@@ -31,11 +33,13 @@ export default function App() {
     await addAddress(entry);
     setShowModal(false);
     fetchOne(entry);
+    fetchBalance(entry);
   };
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     clearEntry(deleteTarget.id);
+    clearBalanceEntry(deleteTarget.id);
     await removeAddress(deleteTarget.id);
     if (activeId === deleteTarget.id) setActiveId(null);
     setDeleteTarget(null);
@@ -51,13 +55,16 @@ export default function App() {
         loading={loadingMap[activeId]}
         hasError={errorMap[activeId]}
         fetchOne={fetchOne}
+        balance={balanceMap[activeId]}
+        balanceLoading={balanceLoadingMap[activeId]}
+        balanceError={balanceErrorMap[activeId]}
+        fetchBalance={fetchBalance}
         onBack={() => setActiveId(null)}
         onDelete={setDeleteTarget}
+        onRename={renameAddress}
         deleteTarget={deleteTarget}
         onDeleteConfirm={handleDeleteConfirm}
         onDeleteClose={() => setDeleteTarget(null)}
-        lang={lang}
-        toggleLang={toggleLang}
         t={t}
       />
     );
@@ -70,6 +77,8 @@ export default function App() {
       loadingMap={loadingMap}
       errorMap={errorMap}
       fetchAll={fetchAll}
+      balanceMap={balanceMap}
+      fetchAllBalances={fetchAllBalances}
       onAddAddress={handleAddAddress}
       onDeleteAddress={setDeleteTarget}
       deleteTarget={deleteTarget}

@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  KeyboardAvoidingView, Platform, StatusBar, ActivityIndicator,
+  KeyboardAvoidingView, Platform, StatusBar, ActivityIndicator, TextInput, PanResponder,
 } from 'react-native';
 import { AddressEntry } from '../types';
 import { T } from '../i18n';
 import { styles } from '../styles';
 import { tsToTime } from '../utils';
 import { DeleteModal } from '../components/DeleteModal';
+import { BalanceData } from '../hooks/useBalance';
 
 type Props = {
   entry: AddressEntry;
@@ -15,47 +16,76 @@ type Props = {
   loading: boolean;
   hasError: boolean;
   fetchOne: (entry: AddressEntry) => void;
+  balance: BalanceData | undefined;
+  balanceLoading: boolean;
+  balanceError: boolean;
+  fetchBalance: (entry: AddressEntry) => void;
   onBack: () => void;
   onDelete: (entry: AddressEntry) => void;
+  onRename: (id: string, label: string) => void;
   deleteTarget: AddressEntry | null;
   onDeleteConfirm: () => void;
   onDeleteClose: () => void;
-  lang: 'zh' | 'en';
-  toggleLang: () => void;
   t: T;
 };
 
 export function DetailScreen({
   entry, data, loading, hasError,
-  fetchOne, onBack, onDelete,
+  fetchOne, onBack, onDelete, onRename,
+  balance, balanceLoading, balanceError, fetchBalance,
   deleteTarget, onDeleteConfirm, onDeleteClose,
-  lang, toggleLang, t,
+  t,
 }: Props) {
   const [countdown, setCountdown] = useState(10);
+  const [editingLabel, setEditingLabel] = useState(false);
+  const [labelInput, setLabelInput] = useState(entry.label);
   const worker = data?.worker?.[0];
+
+  const panResponder = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => g.dx > 20 && Math.abs(g.dy) < 50,
+    onPanResponderRelease: (_, g) => { if (g.dx > 80) onBack(); },
+  })).current;
 
   useEffect(() => {
     fetchOne(entry);
+    fetchBalance(entry);
     setCountdown(10);
-    const interval = setInterval(() => { fetchOne(entry); setCountdown(10); }, 10000);
+    const interval = setInterval(() => { fetchOne(entry); fetchBalance(entry); setCountdown(10); }, 10000);
     const tick = setInterval(() => setCountdown(c => c > 0 ? c - 1 : 0), 1000);
     return () => { clearInterval(interval); clearInterval(tick); };
   }, [entry.id]);
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#0d0d0d' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#0d0d0d' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} {...panResponder.panHandlers}>
       <StatusBar barStyle="light-content" backgroundColor="#0d0d0d" />
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.detailHeader}>
-          <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-            <Text style={styles.backText}>{t.back}</Text>
-          </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={styles.detailTitle}>{entry.label}</Text>
+            {editingLabel ? (
+              <TextInput
+                style={[styles.detailTitle, { borderBottomWidth: 1, borderBottomColor: '#f7931a', paddingVertical: 2 }]}
+                value={labelInput}
+                onChangeText={setLabelInput}
+                autoFocus
+                onBlur={() => {
+                  const trimmed = labelInput.trim();
+                  if (trimmed && trimmed !== entry.label) onRename(entry.id, trimmed);
+                  else setLabelInput(entry.label);
+                  setEditingLabel(false);
+                }}
+                onSubmitEditing={() => {
+                  const trimmed = labelInput.trim();
+                  if (trimmed && trimmed !== entry.label) onRename(entry.id, trimmed);
+                  else setLabelInput(entry.label);
+                  setEditingLabel(false);
+                }}
+              />
+            ) : (
+              <TouchableOpacity onPress={() => { setLabelInput(entry.label); setEditingLabel(true); }}>
+                <Text style={styles.detailTitle}>{entry.label} <Text style={{ color: '#555', fontSize: 14 }}>✎</Text></Text>
+              </TouchableOpacity>
+            )}
           </View>
-          <TouchableOpacity onPress={toggleLang} style={styles.langBtn}>
-            <Text style={styles.langBtnText}>{lang === 'zh' ? 'EN' : '中'}</Text>
-          </TouchableOpacity>
         </View>
 
         {hasError && !worker ? (
@@ -117,6 +147,37 @@ export function DetailScreen({
                 <Text style={styles.label}>{t.startTime}</Text>
                 <Text style={styles.time}>{tsToTime(data.authorised)}</Text>
               </View>
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.label}>{t.balance}</Text>
+              {balanceLoading && !balance ? (
+                <ActivityIndicator color="#f7931a" />
+              ) : balanceError ? (
+                <Text style={{ color: '#e74c3c', fontSize: 13 }}>{t.balanceError}</Text>
+              ) : balance ? (
+                <View style={styles.hashrateRow}>
+                  <View style={styles.hashrateItem}>
+                    <Text style={[styles.hashrateValue, { fontSize: 28 }]}>
+                      {(balance.confirmed / 1e8).toFixed(8)}
+                    </Text>
+                    <Text style={styles.hashrateLabel}>{t.balanceConfirmed} BTC</Text>
+                  </View>
+                  {balance.unconfirmed !== 0 && (
+                    <>
+                      <View style={styles.divider} />
+                      <View style={styles.hashrateItem}>
+                        <Text style={[styles.hashrateValue, { color: '#f0c040', fontSize: 28 }]}>
+                          {balance.unconfirmed > 0 ? '+' : ''}{(balance.unconfirmed / 1e8).toFixed(8)}
+                        </Text>
+                        <Text style={styles.hashrateLabel}>{t.balanceUnconfirmed} BTC</Text>
+                      </View>
+                    </>
+                  )}
+                </View>
+              ) : (
+                <Text style={{ color: '#555', fontSize: 13 }}>{t.noData}</Text>
+              )}
             </View>
 
             <TouchableOpacity style={styles.secondaryButton} onPress={() => onDelete(entry)}>

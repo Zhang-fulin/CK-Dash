@@ -9,6 +9,24 @@ import { styles } from '../styles';
 import { MinerCard } from '../components/MinerCard';
 import { AddModal } from '../components/AddModal';
 import { DeleteModal } from '../components/DeleteModal';
+import { BalanceData } from '../hooks/useBalance';
+
+function parseHashrateToTH(str: string): number {
+  if (!str) return 0;
+  const m = str.match(/([\d.]+)\s*(P|T|G|M|K)/i);
+  if (!m) return 0;
+  const v = parseFloat(m[1]);
+  const unit = m[2].toUpperCase();
+  const map: Record<string, number> = { K: 1e-9, M: 1e-6, G: 1e-3, T: 1, P: 1e3 };
+  return v * (map[unit] ?? 0);
+}
+
+function formatTotalHashrate(th: number): string {
+  if (th >= 1000) return `${(th / 1000).toFixed(2)} PH/s`;
+  if (th >= 1) return `${th.toFixed(2)} TH/s`;
+  if (th >= 0.001) return `${(th * 1000).toFixed(2)} GH/s`;
+  return `${(th * 1e6).toFixed(2)} MH/s`;
+}
 
 type Props = {
   addresses: AddressEntry[];
@@ -16,6 +34,8 @@ type Props = {
   loadingMap: Record<string, boolean>;
   errorMap: Record<string, boolean>;
   fetchAll: (list: AddressEntry[]) => void;
+  balanceMap: Record<string, BalanceData>;
+  fetchAllBalances: (list: AddressEntry[]) => void;
   onAddAddress: (entry: AddressEntry) => void;
   onDeleteAddress: (entry: AddressEntry) => void;
   deleteTarget: AddressEntry | null;
@@ -32,7 +52,8 @@ type Props = {
 
 export function ListScreen({
   addresses, dataMap, loadingMap, errorMap,
-  fetchAll, onAddAddress, onDeleteAddress,
+  fetchAll, balanceMap, fetchAllBalances,
+  onAddAddress, onDeleteAddress,
   deleteTarget, onDeleteConfirm, onDeleteClose,
   showModal, onShowModal, onCloseModal,
   onSelectEntry, lang, toggleLang, t,
@@ -40,9 +61,20 @@ export function ListScreen({
   useEffect(() => {
     if (addresses.length === 0) return;
     fetchAll(addresses);
-    const interval = setInterval(() => fetchAll(addresses), 30000);
+    fetchAllBalances(addresses);
+    const interval = setInterval(() => { fetchAll(addresses); fetchAllBalances(addresses); }, 30000);
     return () => clearInterval(interval);
-  }, [addresses, fetchAll]);
+  }, [addresses, fetchAll, fetchAllBalances]);
+
+  const totalHashrateTH = addresses.reduce((sum, entry) => {
+    const worker = dataMap[entry.id]?.worker?.[0];
+    return sum + parseHashrateToTH(worker?.hashrate1m ?? '');
+  }, 0);
+
+  const totalBTC = addresses.reduce((sum, entry) => {
+    const b = balanceMap[entry.id];
+    return sum + (b ? b.confirmed / 1e8 : 0);
+  }, 0);
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#0d0d0d' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -60,6 +92,20 @@ export function ListScreen({
           </View>
         </View>
 
+        {addresses.length > 0 && (
+          <View style={[styles.card, { marginBottom: 20, flexDirection: 'row' }]}>
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={[styles.hashrateValue, { fontSize: 22 }]}>{formatTotalHashrate(totalHashrateTH)}</Text>
+              <Text style={styles.hashrateLabel}>{lang === 'zh' ? '总算力' : 'Total Hashrate'}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={[styles.hashrateValue, { fontSize: 22 }]}>₿ {totalBTC.toFixed(8)}</Text>
+              <Text style={styles.hashrateLabel}>{lang === 'zh' ? '总余额' : 'Total Balance'}</Text>
+            </View>
+          </View>
+        )}
+
         {addresses.length === 0 ? (
           <View style={styles.emptyBox}>
             <Text style={styles.emptyText}>{t.empty}</Text>
@@ -73,6 +119,7 @@ export function ListScreen({
               worker={dataMap[entry.id]?.worker?.[0]}
               isLoading={loadingMap[entry.id]}
               hasError={errorMap[entry.id]}
+              balance={balanceMap[entry.id]}
               onPress={() => onSelectEntry(entry.id)}
               onLongPress={() => onDeleteAddress(entry)}
               t={t}

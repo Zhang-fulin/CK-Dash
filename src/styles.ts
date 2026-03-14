@@ -133,7 +133,7 @@ export const styles = StyleSheet.create({
   },
   detailTitle: {
     color: colors.textPrimary,
-    fontSize: 20,
+    fontSize: 26,
     fontWeight: '800',
   },
   centerBox: {
@@ -257,13 +257,16 @@ export const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.75)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+    justifyContent: 'flex-end',
   },
   modalBox: {
     backgroundColor: colors.card,
-    borderRadius: 18,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     padding: 24,
+    paddingBottom: 36,
     borderWidth: 1,
     borderColor: colors.border,
   },
