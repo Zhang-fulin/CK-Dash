@@ -1,7 +1,7 @@
 <div align="center">
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/fortawesome/Font-Awesome/6.x/svgs/solid/gauge-high.svg" width="80" height="80" alt="CK-Dash Logo">
+  <img src="https://github.com/Zhang-fulin/CK-Dash/blob/main/assets/icon.png" width="80" height="80" alt="CK-Dash Logo">
 </p>
 
 # CK-Dash
