@@ -148,42 +148,44 @@ export function DetailScreen({
                 <Text style={styles.time}>{tsToTime(data.authorised)}</Text>
               </View>
             </View>
+          </>
+        )}
 
-            <View style={styles.card}>
-              <Text style={styles.label}>{t.balance}</Text>
-              {balanceLoading && !balance ? (
-                <ActivityIndicator color="#f7931a" />
-              ) : balanceError ? (
-                <Text style={{ color: '#e74c3c', fontSize: 13 }}>{t.balanceError}</Text>
-              ) : balance ? (
-                <View style={styles.hashrateRow}>
+        <View style={styles.card}>
+          <Text style={styles.label}>{t.balance}</Text>
+          {balanceLoading && !balance ? (
+            <ActivityIndicator color="#f7931a" />
+          ) : balanceError ? (
+            <Text style={{ color: '#e74c3c', fontSize: 13 }}>{t.balanceError}</Text>
+          ) : balance ? (
+            <View style={styles.hashrateRow}>
+              <View style={styles.hashrateItem}>
+                <Text style={[styles.hashrateValue, { fontSize: 28 }]}>
+                  {(balance.confirmed / 1e8).toFixed(8)}
+                </Text>
+                <Text style={styles.hashrateLabel}>{t.balanceConfirmed} BTC</Text>
+              </View>
+              {balance.unconfirmed !== 0 && (
+                <>
+                  <View style={styles.divider} />
                   <View style={styles.hashrateItem}>
-                    <Text style={[styles.hashrateValue, { fontSize: 28 }]}>
-                      {(balance.confirmed / 1e8).toFixed(8)}
+                    <Text style={[styles.hashrateValue, { color: '#f0c040', fontSize: 28 }]}>
+                      {balance.unconfirmed > 0 ? '+' : ''}{(balance.unconfirmed / 1e8).toFixed(8)}
                     </Text>
-                    <Text style={styles.hashrateLabel}>{t.balanceConfirmed} BTC</Text>
+                    <Text style={styles.hashrateLabel}>{t.balanceUnconfirmed} BTC</Text>
                   </View>
-                  {balance.unconfirmed !== 0 && (
-                    <>
-                      <View style={styles.divider} />
-                      <View style={styles.hashrateItem}>
-                        <Text style={[styles.hashrateValue, { color: '#f0c040', fontSize: 28 }]}>
-                          {balance.unconfirmed > 0 ? '+' : ''}{(balance.unconfirmed / 1e8).toFixed(8)}
-                        </Text>
-                        <Text style={styles.hashrateLabel}>{t.balanceUnconfirmed} BTC</Text>
-                      </View>
-                    </>
-                  )}
-                </View>
-              ) : (
-                <Text style={{ color: '#555', fontSize: 13 }}>{t.noData}</Text>
+                </>
               )}
             </View>
+          ) : (
+            <Text style={{ color: '#555', fontSize: 13 }}>{t.noData}</Text>
+          )}
+        </View>
 
-            <TouchableOpacity style={styles.secondaryButton} onPress={() => onDelete(entry)}>
-              <Text style={[styles.secondaryButtonText, { color: '#c0392b' }]}>{t.deleteAddr}</Text>
-            </TouchableOpacity>
-          </>
+        {worker && (
+          <TouchableOpacity style={styles.secondaryButton} onPress={() => onDelete(entry)}>
+            <Text style={[styles.secondaryButtonText, { color: '#c0392b' }]}>{t.deleteAddr}</Text>
+          </TouchableOpacity>
         )}
       </ScrollView>
 

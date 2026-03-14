@@ -31,7 +31,7 @@ export function MinerCard({ entry, worker, isLoading, hasError, balance, onPress
           <Text style={styles.listLabel}>{entry.label}</Text>
           <Text style={styles.listAddr}>{shortAddr(entry.address)}</Text>
           {balance !== undefined && (
-            <Text style={{ color: '#f7931a', fontSize: 11, marginTop: 3 }}>
+            <Text style={{ color: '#f7931a', fontSize: 12, marginTop: 3 }}>
               ₿ {(balance.confirmed / 1e8).toFixed(8)}
             </Text>
           )}

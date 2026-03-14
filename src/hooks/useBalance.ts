@@ -15,7 +15,7 @@ export function useBalance() {
   const fetchBalance = useCallback(async (entry: AddressEntry) => {
     setBalanceLoadingMap(m => ({ ...m, [entry.id]: true }));
     try {
-      const res = await fetch(`https://btcscan.org/api/address/${entry.address}`);
+      const res = await fetch(`https://mempool.space/api/address/${entry.address}`);
       if (!res.ok) throw new Error();
       const json = await res.json();
       const confirmed =
